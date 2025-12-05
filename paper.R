@@ -78,66 +78,103 @@ set.seed(123)
 lasso<-cv.glmnet(x,y,alpha=1)
 coef(lasso)
 
-#professors suggestion
-keep <- c("Brazil","Mexico","Colombia","Guatemala",
-          "Honduras","Costa Rica","Taiwan")
-
-coffee_clean2<-coffee_clean
-
-coffee_clean2$Country.of.Origin[!(coffee_clean2$Country.of.Origin %in% keep)] <- "Other"
-
-coffee_clean2$Country.of.Origin <- factor(coffee_clean2$Country.of.Origin,
-                                         levels = c(keep, "Other"))
-
-table(coffee_clean2$Country.of.Origin)
-
-reg3<-lm(Total.Cup.Points~Processing.Method+Color+Moisture+
-           altitude_mean_meters+Category.One.Defects+Category.Two.Defects+
-           Quakers+Number.of.Bags+Country.of.Origin, data=coffee_clean2)
-
-#lasso based grouping
-keep <- c("Colombia","Ethiopia","Kenya","Mexico") 
-
-coffee_clean3<-coffee_clean
-coffee_clean3$Country.of.Origin[!(coffee_clean3$Country.of.Origin %in% keep)] <- "Other"
-
-coffee_clean3$Country.of.Origin <- factor(coffee_clean3$Country.of.Origin,
-                                         levels = c(keep, "Other"))
-
-table(coffee_clean3$Country.of.Origin)
-
-reg3<-lm(Total.Cup.Points~Processing.Method+Color+Moisture+
-           altitude_mean_meters+Category.One.Defects+Category.Two.Defects+
-           Quakers+Number.of.Bags+Country.of.Origin, data=coffee_clean3)
-################################################################################
-dwtest(reg3)
-summary(reg3)
-plot(reg3$fitted.values, reg3$residuals)
-abline(h=0, col=2)
-group<-reg3$fitted.values>median(reg3$fitted.values)
-var.test(reg3$residuals[group], reg3$residuals[!group])
-qqnorm(reg3$residuals, cex=2)
-qqline(reg3$residuals, col=2, lwd=3)
-vif(reg3)
-plot(reg3)
-dwtest(reg3)
 ################################################################################
 
 #professor suggestion
 countries <- c("Brazil","Mexico","Colombia","Guatemala",
                "Honduras","Costa Rica","Taiwan")
+methods<-c("Washed / Wet","Natural / Dry","Pulped natural / honey","Semi-washed / Semi-pulped", "Other")
 coffee_clean4 <- coffee_clean
 
 for (i in countries) {
   coffee_clean4[[paste0(i)]] <- coffee_clean4$Country.of.Origin == i
 }
+coffee_clean4$Other.Country <- !(coffee_clean4$Country.of.Origin %in% countries)
 
-
+for (i in methods){
+  coffee_clean4[[paste0(i)]]<-coffee_clean4$Processing.Method == i
+}
 coffee_clean4$Other <- !(coffee_clean4$Country.of.Origin %in% countries)
+
 
 head(coffee_clean4[])
 
-## lasso regression, try regions 
+#lasso with new grouping
+library(glmnet)
+x<-model.matrix(Total.Cup.Points~Processing.Method+Color+Moisture+
+                  altitude_mean_meters+Category.One.Defects+Category.Two.Defects+
+                  Quakers+Number.of.Bags+Brazil+Mexico+Colombia+Guatemala+Honduras+`Costa Rica`+Taiwan+Other,
+                data=coffee_clean4)
+
+y<-coffee_clean4$Total.Cup.Points
+
+set.seed(123)
+
+lasso<-cv.glmnet(x,y,alpha=1)
+coef(lasso)
+## regfression model testing
+reg3<-lm(Total.Cup.Points~1, data=coffee_clean4)
+reg4<-lm(Total.Cup.Points~Processing.Method+Color+Moisture+
+           altitude_mean_meters+Category.One.Defects+Category.Two.Defects+
+           Quakers+Number.of.Bags+Brazil+Mexico+Colombia+Guatemala+Honduras+`Costa Rica`+Taiwan+Other+
+           `Washed / Wet`+`Natural / Dry`+`Pulped natural / honey`+`Semi-washed / Semi-pulped`+Other,
+         data=coffee_clean4)
+dwtest(reg4)
+summary(reg4)
+plot(reg4$fitted.values, reg4$residuals)
+abline(h=0, col=2)
+group<-reg4$fitted.values>median(reg4$fitted.values)
+var.test(reg4$residuals[group], reg4$residuals[!group])
+qqnorm(reg4$residuals, cex=2)
+qqline(reg4$residuals, col=2, lwd=3)
+vif(reg4)
+dwtest(reg4)
+plot(reg4$fitted.values, reg4$residuals)
+abline(h=0, col=2)
+
+
+forward3<-step(reg3, scope=list(lower=reg3, upper=reg4), 
+               direction="forward", k=2)
+forward3
+
+forward4<-step(reg3, scope=list(lower=reg3, upper=reg4), 
+               direction="forward", k=log(nrow(coffee_clean)))
+forward4
+#aic and bic for backward
+backward3<-step(reg4, scope=list(lower=reg4, upper=reg3), 
+                direction="backward", k=2)
+backward3
+
+backward4<-step(reg4, scope=list(lower=reg4, upper=reg3), 
+                direction="backward", k=log(nrow(coffee_clean)))
+backward4
+#aic and bic for stepwise
+stepwiseAIC2<-step(reg3, scope=list(lower=reg3, upper=reg4), 
+                  direction="both", k=2)
+stepwiseAIC2
+
+stepwiseBIC2<-step(reg3, scope=list(lower=reg3, upper=reg4), 
+                  direction="both", k=log(nrow(coffee_clean)))
+stepwiseBIC2
+#finding the best model and checking values
+AIC(forward3)
+AIC(forward4)
+AIC(backward3)
+AIC(backward4)
+AIC(stepwiseBIC2)
+AIC(stepwiseAIC2)
+
+summary(forward3)
+summary(stepwiseAIC2)
+
+dwtest(forward3)
+group2<-forward3$fitted.values>median(forward3$fitted.values)
+var.test(forward3$residuals[group2], forward3$residuals[!group2])
+plot(cooks.distance(forward3))
+
+################################################################################
+## lasso regression, try regions or different countries
+## currently this does not work
 coffee_clean5 <- coffee_clean
 countries <- c("Colombia","Ethiopia","Kenya","Mexico")
 
@@ -153,33 +190,3 @@ reg5<-lm(Total.Cup.Points~Processing.Method+Color+Moisture+
            Quakers+Number.of.Bags+Colombia+Ethiopia+Kenya+Mexico+Other,
          data=coffee_clean5)
 dwtest(reg5)
-#lasso with new grouping
-library(glmnet)
-x<-model.matrix(Total.Cup.Points~Processing.Method+Color+Moisture+
-                  altitude_mean_meters+Category.One.Defects+Category.Two.Defects+
-                  Quakers+Number.of.Bags+Brazil+Mexico+Colombia+Guatemala+Honduras+`Costa Rica`+Taiwan+Other,
-                data=coffee_clean4)
-
-y<-coffee_clean4$Total.Cup.Points
-
-set.seed(123)
-
-lasso<-cv.glmnet(x,y,alpha=1)
-coef(lasso)
-reg4<-lm(Total.Cup.Points~Processing.Method+Color+Moisture+
-           altitude_mean_meters+Category.One.Defects+Category.Two.Defects+
-           Quakers+Number.of.Bags+Brazil+Mexico+Colombia+Guatemala+Honduras+`Costa Rica`+Taiwan+Other,
-         data=coffee_clean4)
-dwtest(reg4)
-summary(reg4)
-plot(reg4$fitted.values, reg4$residuals)
-abline(h=0, col=2)
-group<-reg4$fitted.values>median(reg4$fitted.values)
-var.test(reg4$residuals[group], reg4$residuals[!group])
-qqnorm(reg4$residuals, cex=2)
-qqline(reg4$residuals, col=2, lwd=3)
-vif(reg4)
-plot(reg4)
-dwtest(reg4)
-plot(reg4$fitted.values, reg4$residuals)
-abline(h=0, col=2)
