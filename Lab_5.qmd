@@ -1,0 +1,110 @@
+---
+title: "Lab 5"
+author: "Brad Staples"
+format: pdf
+editor: visual
+---
+
+# Question 1
+
+## 1g
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(lmtest)
+library(car)
+salaries<-read.table("profsalary.txt", header=TRUE)
+attach(salaries)
+
+Experience_sq<-I(Experience^2)
+reg<-lm(Salary~Experience+Experience_sq, data=salaries)
+
+group<-reg$fitted.values>median(reg$fitted.values)
+var.test(reg$residuals[group], reg$residuals[!group])
+
+plot(reg$fitted.values, reg$residuals)
+abline(h=0, col="red")
+```
+There is a good amount of random scatter to the graph, and with no real fanning pattern, the points show a consistent spread throughout the plot. There is a slight wave pattern near the end, but that is more associated with the assumption of independence than with a major linearity issue. Linearity is significantly improved over the base model, which had a distinct upside-down U curve. The var.test supports this assumption with a ratio of variances close to 1 and a high p-value.
+
+# Question 3
+
+## 3e
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library("faraway")
+attach(gala)
+fara<-lm(Species~., data=gala)
+fara_reduc_log<-lm(Species~Endemics+log(Area)+Elevation)
+summary(fara_reduc_log)$r.squared
+```
+R-squared value of `r summary(fara_reduc_log)$r.squared` for the transformed reduced model. This model used species, endemics, area and elevation with a log transformation on the area predictor.
+
+## 3f
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+avPlots(fara_reduc_log)
+```
+Elevation not long seems to add value to this model. 
+
+## 3g
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+fara_reduc_log2<-lm(Species~Endemics+log(Area))
+summary(fara_reduc_log2)$r.squared
+```
+
+R-squared value of `r summary(fara_reduc_log2)$r.squared` for this model, compared to the orignal model's `r summary(fara_reduc_log)$r.squared`, so the R-squared value is slightly lower by a very minor amount.
+
+# Question 4
+
+## 4e
+
+### The original model is first, the transformed model is second.
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+attach(sat)
+satReg2<-lm(total~takers+salary+ratio)
+crPlots(satReg2)
+plot(satReg2$fitted.values, satReg2$residuals, 
+     xlab="Fitted Values",
+     ylab="Residuals",
+     main="Baseline Model",
+     cex=2)
+qqnorm(satReg2$residuals, cex=2)
+qqline(satReg2$residuals, col=2, lwd=3)
+
+satReg3<-lm(total~log(takers)+salary+ratio)
+crPlots(satReg3)
+plot(satReg3$fitted.values, satReg3$residuals, 
+     xlab="Fitted Values",
+     ylab="Residuals",
+     main="Transformed Model",
+     cex=2)
+qqnorm(satReg3$residuals, cex=2)
+qqline(satReg3$residuals, col=2, lwd=3)
+```
+
+I found the transformation of takers to be the most useful, because it brings the smooth fit line is much closer to the fitted values line than it was before the log transformation, indicating a stronger linear relationship between takers and SAT scores. Transformations of the other two predictors did not meaningfully reduce curvature or improve the residuals or normality to the same degree as the transformation on takers. This could be indicative of a lot of noise in the model or a weaker relationship that causes transformations to have little overall impact.
+
+## 4f
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+oregon<-sat["Oregon", ]
+```
+Oregon's predicted SAT score is `r predict(satReg2, newdata = oregon)`, which is lower than its recorded SAT score of `r oregon$total`.
+
+## 4g
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+modelStates<-sat$total-predict(satReg3)
+sat[which.max(abs(modelStates)),]
+```
+`r rownames(sat)[which.max(abs(modelStates))]` is state that is farthest from what the model predicts and `r rownames(sat)[which.max(abs(modelStates))]`  is under performing the model by `r min(modelStates)` points.
+
+## 4h
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+sat[which.min(abs(modelStates)),]
+```
+
+`r rownames(sat)[which.min(abs(modelStates))]` has the closet SAT score to what the model predicts
+
+## 4i
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+satReg1<-lm(total~takers+salary+ratio+expend)
+coef(satReg1)
+```
+
+While student ratio is not the absolute largest value, we did throw out expenditure when looking at the AVPlot for this model, since its slope was relatively flat and did not impact the model as much as the other predictors. Student ratio is the second largest absolute value and its importance for SAT scores makes logical sense, because giving teachers a smaller amount of students would assure that each student's academic needs are being addressed and sufficiently accommodated to achieve individual academic success.

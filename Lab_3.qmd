@@ -1,0 +1,150 @@
+---
+title: "Lab 3"
+author: Brad Staples
+format: pdf
+---
+
+# Question 1
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(faraway)
+attach(gala)
+#plotting the data and regression line
+plot(Endemics, Species, 
+     xlab="Endemic Species", 
+     ylab="Plant Species", 
+     main="Endemic Vs Plant Species on an Island")
+reg1<-lm(Species~Endemics)
+abline(reg1, col="red", lwd=2)
+#fitted vs residual, var.test
+plot(reg1$fitted.values, reg1$residuals, 
+     xlab="Fitted Values",
+     ylab="Residuals",
+     cex=2)
+abline(h=0, col=2, lwd=3)
+group1<-reg1$fitted.values>median(reg1$fitted.values)
+var.test(reg1$residuals[group1], reg1$residuals[!group1])
+```
+
+## Linearity
+
+From the fitted model scatter-plot we can see that the relationship between endemic species and plant species is not perfectly linear. There is a noticeable dip in the midrange between 20 and 40 on the x-axis, with several higher-end outliers above 60 that the line does not pass through at all, but still pull the regression line upwards. The fitted vs residual graph also shows a slight curve pattern between 0 to 150 on the x-axis. Altogether, these patterns suggest that linearity is not a valid assumption.
+
+## Homoskedasticity
+
+The residual plot shows a slight fanning pattern: points on the left are tightly clustered around the center, but the spread increases as fitted values grow. The variance test supports this unequal variance, leading me to conclude that the homoskedasticity assumption is not valid.
+
+```{r}
+#qq test, sharpiro.test
+qqnorm(reg1$residuals, cex=2)
+qqline(reg1$residuals, col=2, lwd=3)
+shapiro.test(reg1$residuals)
+```
+
+## Normality
+
+The QQ plot shows that most points fall close to the line, though there are some deviations at the tails. The line only barely passes through a lot of the middle points and becomes far less accurate on the edge cases. However when we run the Shapiro-Wilk test, we end up with a P-value above 0.05, which means we fail to reject the null hypothesis and the normality assumption is reasonably valid, despite the graph being a little awkward.
+
+# Question 2
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(datasets)
+attach(Orange)
+library(lmtest)
+#plot and regression
+plot(circumference, age, 
+     xlab="Circumference", 
+     ylab="Age")
+reg2<-lm(age~circumference)
+abline(reg2, col="red", lwd=2)
+
+#fitted vs residual, var.test
+plot(reg2$fitted.values, reg2$residuals,
+     xlab="Fitted Values",
+     ylab="Residuals",
+     cex=2)
+abline(h=0, col=2, lwd=3)
+group2<-reg2$fitted.values>median(reg2$fitted.values)
+var.test(reg2$residuals[group2], reg2$residuals[!group2])
+```
+
+##Linearity
+
+The fitted model shows a lot of the points spread above or below the regression line. Examining the fitted vs residual plot, we can see a distinct n shaped curve with the points in the middle being the highest and the edge cases being the lowest. This pattern suggests a nonlinear relationship between age and circumference and the invalidity of the linearity assumption.
+
+## Homoskedasticity
+
+There is a pretty decent fan shape to this plot too, with a tighter cluster near the left side of the graph and a noticeable spread farther to the right side. This suggests that the data is more heteroskedastic in nature. The p value below 0.05 in the var.test also lends itself towards the notion that the homoskedasticty assumption is not valid.
+
+```{r}
+#qq test, sharpiro.test
+qqnorm(reg2$residuals, cex=2)
+qqline(reg2$residuals, col=2, lwd=3)
+shapiro.test(reg2$residuals)
+```
+
+## Normality
+
+Compared to question 1, this QQ-plot has a much more noticeable drift from the line, with a large amount of drift above 1. Running the Shapiro-Wilk test for confirmation leads us to a large p-value of 0.1792, meaning we fail to reject the null hypothesis and assume normality is reasonably valid.
+
+```{r}
+plot(reg2$residuals, pch=16, cex=1.5, ylab="Residuals")
+dwtest(reg2)
+```
+
+## Independence
+
+The residual plot shows a repeated, distinct wave-like pattern with three sections which suggests a violation of the independence assumption. If we examine it a little closer with a Durbin-Watson test we return a low p value of 0.0003, meaning we reject the null hypothesis of independence and our independence assumption is invalid. 
+
+# Question 3
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(datasets)
+penguins_df<-penguins[penguins$species=="Gentoo",]
+attach(penguins_df)
+
+
+#plot and regression
+plot(flipper_len, body_mass,
+     xlab="Flipper Length",
+     ylab="Body Weight")
+reg3<-lm(body_mass~flipper_len)
+abline(reg3, col="red", lwd=2)
+
+#fitted vs residual, var.test
+plot(reg3$fitted.values, reg3$residuals,
+     xlab="Fitted Values",
+     ylab="Residuals",
+     cex=2)
+abline(h=0, col=2, lwd=3)
+group3<-reg3$fitted.values>median(reg3$fitted.values)
+var.test(reg3$residuals[group3], reg3$residuals[!group3])
+```
+
+## Linearity
+
+Linearity appears valid in this data, as the fitted models shows a nice, even spread despite a decent amount of outliers that do not distort the overall trend. With our fitted vs residual plot, we get a random scatter of data with no visible curves or bends, which also supports the assumption of linearity in our data.
+
+## Homoskedasticity
+
+The data in the fitted vs residual plot is tight, close to zero on the plot and does not have any visible fanning or spreading that suggests heteroskedasticity. The var test also yields favorable results with a ratio of variances at 0.8980979 and a p-value of 0.6804, meaning we fail to reject the null hypothesis and assume homoskedasticity.
+
+```{r}
+#qq test, sharpiro.test
+qqnorm(reg3$residuals, cex=2)
+qqline(reg3$residuals, col=2, lwd=3)
+shapiro.test(reg3$residuals)
+```
+
+## Normality
+
+There is a massive concentration of points centered around the line, so even the slight drift toward the edges initially did not deter me from assuming normality in this data. However, the Shapiro–Wilk test yields a p-value of 0.005573. Since this is below 0.05, we must reject the null hypothesis of normality. Despite the strong visual fit, the normality assumption is statistically invalid.
+
+```{r}
+plot(reg3$residuals, pch=16, cex=1.5, ylab="Residuals")
+dwtest(reg3)
+```
+
+## Independence
+
+Unlike the previous dataset, there are no repeating patterns or waves in the residuals and the Durbin-Watson Test also yields a high p-value, all of which leads me to assume that independence in this dataset is a valid.
