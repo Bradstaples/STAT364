@@ -1,0 +1,38 @@
+---
+title: "Lab 7"
+author: "Brad Staples"
+format: pdf
+editor: visual
+---
+
+# Question 2
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(glmnet)
+library(MASS)
+library(leaps)
+library(car)
+library(caret)
+
+countries<-read.csv("Clean Country.csv")
+countries<-na.omit(countries)
+countries<-countries[, -c(1,2)]
+                     
+#Question 1
+countriesMod<-lm(Ladder.score~., data=countries)
+x<-model.matrix(countriesMod)
+y<-countriesMod$model[,1]
+
+set.seed(364)
+step1<-cv.glmnet(x,y,alpha=1)
+#Question 2
+plot(step1)
+plot(step1$glmnet.fit)
+```
+
+# Question 11
+After running all the cross-validation and checking assumptions, I would recommend using the backward elimination model based on AIC for future predictions. Out of the three models, it had the highest Shapiro-Wilk p-value (0.2971), indicating that its residuals are the most normally distributed. The residual vs. fitted plot shows a good random scatter with no fanning or curve patterns, supporting linearity and homoskedasticity. Its R-squared value of 0.887 is still very strong.
+
+CR plots for this model also show good linearity and are clearly better than the original full regression model, which includes many variables with weaker linear relationships. While the AIC and BIC models are similar in linearity, the stronger normality of residuals in the AIC model makes it the better choice. Overall, the backward elimination model using AIC strikes the best balance between simplicity and predictive power, making it the most reliable model for future predictions.
+
+# Question 12
+If a country wanted to raise its happiness score by focusing only on one metric they should look into increasing the social support services, since that metric had the highest positive coefficient in the AIC backwards elimination model at 1.2719962. This means that for every one unit increase in social support, the ladder score increases by 1.2719962 units, holding all other variables constant. This is the largest increase out of all the predictors in the model, so focusing on this metric would likely yield the best results for increasing a country's happiness score. This makes sense to me from a non-statistical perspective as well, if we take time to care for our citizens then we have less crime, which costs money to the community, and more productivity from our citizens, which benefits everyone regardless of social status.
