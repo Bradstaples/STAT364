@@ -116,8 +116,8 @@ coef(lasso)
 reg3<-lm(Total.Cup.Points~1, data=coffee_clean4)
 reg4<-lm(Total.Cup.Points~Processing.Method+Color+Moisture+
            altitude_mean_meters+Category.One.Defects+Category.Two.Defects+
-           Quakers+Number.of.Bags+Brazil+Mexico+Colombia+Guatemala+Honduras+`Costa Rica`+Taiwan+Other+
-           `Washed / Wet`+`Natural / Dry`+`Pulped natural / honey`+`Semi-washed / Semi-pulped`+Other,
+           Quakers+Number.of.Bags+Brazil+Mexico+Colombia+Guatemala+Honduras+`Costa Rica`+Taiwan+
+           `Washed / Wet`+`Natural / Dry`+`Pulped natural / honey`+`Semi-washed / Semi-pulped`,
          data=coffee_clean4)
 dwtest(reg4)
 summary(reg4)
@@ -171,7 +171,45 @@ dwtest(forward3)
 group2<-forward3$fitted.values>median(forward3$fitted.values)
 var.test(forward3$residuals[group2], forward3$residuals[!group2])
 plot(cooks.distance(forward3))
+crPlots(forward3)
+################################################################################
+#WLS Grouping of the model
+reg5<-lm(Total.Cup.Points~1, data=coffee_clean4)
+reg6<-lm(Total.Cup.Points~Processing.Method+Color+Moisture+
+           altitude_mean_meters+Category.One.Defects+Category.Two.Defects+
+           Quakers+Number.of.Bags+Brazil+Mexico+Colombia+Guatemala+Honduras+`Costa Rica`+Taiwan+Other+
+           `Washed / Wet`+`Natural / Dry`+`Pulped natural / honey`+`Semi-washed / Semi-pulped`+Other,
+         data=coffee_clean4)
 
+country_var<-tapply(coffee_clean4$Total.Cup.Points, coffee_clean4$Country.of.Origin, var)
+coffee_clean4$weights<-1/country_var[coffee_clean4$Country.of.Origin]
+reg_wls<-lm(Total.Cup.Points~Processing.Method+Color+Moisture+
+              altitude_mean_meters+Category.One.Defects+Category.Two.Defects+
+              Quakers+Number.of.Bags+Brazil+Mexico+Colombia+Guatemala+Honduras+`Costa Rica`+Taiwan+Other+
+              `Washed / Wet`+`Natural / Dry`+`Pulped natural / honey`+`Semi-washed / Semi-pulped`+Other,
+            data=coffee_clean4, weights=weights)
+dwtest(reg_wls)
+group3<-reg_wls$fitted.values>median(reg_wls$fitted.values)
+var.test(reg_wls$residuals[group3], reg_wls$residuals[!group3])
+summary(reg_wls)
+
+################################################################################
+group_var <- tapply(coffee_clean4$Total.Cup.Points, coffee_clean4$Country.of.Origin, var)
+
+# 5️⃣ Assign weights = 1 / group variance
+coffee_clean4$w <- 1 / group_var[coffee_clean4$Country.of.Origin]
+
+# 6️⃣ Fit WLS model using weights
+fit_wls_group <- lm(Total.Cup.Points ~ 
+                      Category.Two.Defects + Category.One.Defects +
+                      Brazil + Mexico + Colombia + Guatemala + Honduras + `Costa Rica` + Taiwan + Other +
+                      `Natural / Dry` + `Semi-washed / Semi-pulped` + `Washed / Wet` + `Pulped natural / honey` + Other,
+                    data = coffee_clean4,
+                    weights = w)
+
+group3<-fit_wls_group$fitted.values>median(fit_wls_group$fitted.values)
+var.test(fit_wls_group$residuals[group3], fit_wls_group$residuals[!group3])
+plot(fit_wls_group$fitted.values, fit_wls_group$residuals)
 ################################################################################
 ## lasso regression, try regions or different countries
 ## currently this does not work

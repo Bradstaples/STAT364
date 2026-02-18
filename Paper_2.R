@@ -30,7 +30,7 @@ coffee_clean$Other <- !(coffee_clean$Processing.Method %in% methods)
 for (i in color){
   coffee_clean[[paste0(i)]]<-coffee_clean$Color == i
 }
-coffee_clean$Other.Color <- !(coffee_clean$Color %in% color)
+coffee_clean$unknown.color <- !(coffee_clean$Color %in% color)
 head(coffee_clean[])
 
 ####################
