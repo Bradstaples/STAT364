@@ -1,6 +1,7 @@
 install.packages("faraway")
 
 
+
                               ##question 1
 library(faraway)
 help(gala)

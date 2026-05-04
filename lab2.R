@@ -2,6 +2,7 @@ install.packages("openintro")
 library(openintro)
 help(bac)
 
+
 attach(bac)
 plot(beers, bac)
 reg<-lm(bac~beers)
