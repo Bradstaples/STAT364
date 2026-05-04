@@ -4,6 +4,7 @@ author: Brad Staples
 format: pdf
 ---
 
+
 # Question 1
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}

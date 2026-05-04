@@ -4,6 +4,7 @@ author: Brad Staples
 format: pdf
 ---
 
+
 ## Question 2
 
 *Create a a scatterplot of vehicle weight and horsepower from the mtcars data frame. Overlay your plot with a median-median line in red.*

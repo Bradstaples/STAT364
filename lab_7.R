@@ -4,6 +4,7 @@ library(leaps)
 library(car)
 library(caret)
 
+
 countries<-read.csv("Clean Country.csv")
 countries<-na.omit(countries)
 countries<-countries[, -c(1,2)]

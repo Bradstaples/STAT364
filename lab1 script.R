@@ -4,6 +4,7 @@ summary(bac)
 attach(bac)
 med_beer<-median(beers)
 
+
 grp1<-beers<med_beer
 table(grp1)
 plot(beers, bac, xlab="beers", ylab="Blood Alcohol")

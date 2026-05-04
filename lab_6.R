@@ -3,6 +3,7 @@ library("faraway")
 install.packages("leaps")
 library(leaps)
 attach(fat)
+
 #1a
 mod1<-lm(density~1)
 summary(mod1)

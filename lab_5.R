@@ -3,6 +3,7 @@ salaries<
 attach(salaries)
 View(salaries)
 #1a
+
 plot(Experience,Salary)
 #1b
 reg1<-lm(Salary~Experience)

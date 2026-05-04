@@ -2,6 +2,8 @@ library(MASS)
 attach(Insurance)
 data(Insurance)
 
+
+
 ## 1a
 plot(Holders, Claims,
      xlab="Policyholders",
